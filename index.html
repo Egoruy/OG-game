@@ -1092,7 +1092,7 @@ function startL2Game() {
             this.doorImg=this.add.image(this.doorX,this.doorY,'door').setDisplaySize(38*sx,90*sy).setDepth(5);
 
             // Player
-            this.player=this.physics.add.sprite(W*0.5,H*0.72,'hero1').setDisplaySize(60*sc,85*sc).setCollideWorldBounds(true).setDepth(10);
+            this.player=this.physics.add.sprite(W*0.5,H*0.72,'hero1').setDisplaySize(72*sx,100*sy).setCollideWorldBounds(true).setDepth(10);
             this.physics.add.collider(this.player,this.staticGroup);
             this._heroFrames=['hero1','hero2','hero3','hero2']; this._heroIdx=0; this.isMoving=false;
             this.time.addEvent({delay:140,loop:true,callback:()=>{
@@ -1959,13 +1959,18 @@ function startL4Game() {
             this._drawGate(sx, sy);
 
             this.gateLockText = this.add.text(gx - 14*sx, gy,
-                '🔒', { fontSize:`${22*Math.min(sx,sy)*10}px` }
+                '🔒', { fontSize:'22px' }
             ).setOrigin(0.5).setDepth(9);
 
-            this.gateLabel = this.add.text(gx - 12*sx, gy - 60*sy,
+            this.gateLabel = this.add.text(gx - 12*sx, gy - 48*sy,
                 'CRYPTO\nGATE',
-                { fontFamily:'"Press Start 2P"', fontSize:`${7*Math.min(sx,sy)*10}px`, color:'#f5c542', align:'center', lineSpacing:4 }
+                { fontFamily:'"Press Start 2P"', fontSize:'10px', color:'#f5c542', align:'center', lineSpacing:4 }
             ).setOrigin(0.5).setDepth(9);
+            this.tweens.add({targets:this.gateLabel, alpha:0.2, duration:600, yoyo:true, repeat:-1, ease:'Sine.easeInOut'});
+
+            // Red "locked" zone visual
+            this.gateRedZone = this.add.rectangle(gx - 10*sx, gy, 18*sx, H*0.55, 0xff0000, 0.18).setDepth(7);
+            this.tweens.add({targets:this.gateRedZone, alpha:0.05, duration:800, yoyo:true, repeat:-1, ease:'Sine.easeInOut'});
 
             // ── Colliders ─────────────────────────────────────────────
             this.staticGroup = this.physics.add.staticGroup();
@@ -2006,10 +2011,11 @@ function startL4Game() {
             const tx = 420*sx, ty = 200*sy;
             const tcGlow = this.add.circle(tx, ty, 30*Math.min(sx,sy), 0xf5c542, 0.18).setDepth(3);
             this.tweens.add({targets:tcGlow,scaleX:1.7,scaleY:1.7,alpha:0,duration:1100,repeat:-1,ease:'Sine.easeOut'});
-            this.add.text(tx, ty, '💻', {fontSize:`${22*Math.min(sx,sy)}px`}).setOrigin(0.5).setDepth(4);
-            this.add.text(tx, ty+28*sy, 'TWIN\nCONSOLE',
-                {fontFamily:'"Press Start 2P"',fontSize:`${6*Math.min(sx,sy)*10}px`,color:'#f5c542',align:'center',lineSpacing:2}
+            this.add.text(tx, ty, '💻', {fontSize:'20px'}).setOrigin(0.5).setDepth(4);
+            const twinLabel = this.add.text(tx, ty+26*sy, 'TWIN\nCONSOLE',
+                {fontFamily:'"Press Start 2P"',fontSize:'9px',color:'#f5c542',align:'center',lineSpacing:2}
             ).setOrigin(0.5).setDepth(4);
+            this.tweens.add({targets:twinLabel, alpha:0.3, duration:700, yoyo:true, repeat:-1, ease:'Sine.easeInOut'});
             const tz = this.add.rectangle(tx, ty, 100*sx, 80*sy, 0, 0);
             tz.setData('type', 'terminal'); this.interactives.add(tz);
 
@@ -2048,9 +2054,9 @@ function startL4Game() {
         openGate() {
             if(this._gateOpen) return;
             this._gateOpen = true;
-            // Tween gate bars out
             this.tweens.add({ targets:this.gateGfx, alpha:0, scaleX:0, x:this.scale.width, duration:700, ease:'Back.easeIn' });
             this.tweens.add({ targets:[this.gateLockText, this.gateLabel], alpha:0, duration:400 });
+            if(this.gateRedZone) this.tweens.add({ targets:this.gateRedZone, alpha:0, duration:400, onComplete:()=>this.gateRedZone.destroy() });
 
             // Explosion sparks
             const gx = this.scale.width * 0.97, gy = this.scale.height * 0.5;
@@ -2294,7 +2300,9 @@ let quizScore     = 0;
 let quizAnswered  = false;
 
 async function startQuiz() {
-    show('quiz-screen','flex');
+    const qs = document.getElementById('quiz-screen');
+    qs.classList.remove('hidden');
+    qs.style.display = 'flex';
     document.getElementById('quiz-loading').style.display='flex';
     document.getElementById('quiz-main').style.display='none';
 
@@ -2331,8 +2339,10 @@ function renderQuestion() {
     quizAnswered = false;
     const q = quizQuestions[quizCurrent];
     const total = quizQuestions.length;
+    const letters = ['A','B','C','D'];
 
     document.getElementById('quiz-progress-text').textContent = `QUESTION ${quizCurrent+1} / ${total}`;
+    document.getElementById('quiz-q-num').textContent = `// QUERY_${String(quizCurrent+1).padStart(3,'0')}`;
     document.getElementById('quiz-progress-bar-fill').style.width = `${((quizCurrent)/total)*100}%`;
     document.getElementById('quiz-score-display').textContent = `SCORE: ${quizScore}/${total}`;
     document.getElementById('quiz-question-text').textContent = q.q;
@@ -2343,17 +2353,18 @@ function renderQuestion() {
     q.options.forEach((opt, i) => {
         const btn = document.createElement('button');
         btn.className = 'qopt-btn';
-        btn.textContent = opt;
+        // Strip "A) " prefix if model included it, we add our own
+        const text = opt.replace(/^[A-D]\)\s*/,'');
+        btn.innerHTML = `<span class="qopt-letter">${letters[i]})</span><span>${text}</span>`;
         btn.onclick = () => answerQuestion(i);
         opts.appendChild(btn);
     });
 
     document.getElementById('quiz-next-btn').style.display='none';
 
-    // Animate question in
     const qCard = document.getElementById('quiz-card');
     qCard.style.animation='none';
-    qCard.offsetHeight; // reflow
+    qCard.offsetHeight;
     qCard.style.animation='quizSlideIn 0.4s ease both';
 }
 
@@ -2372,13 +2383,14 @@ function answerQuestion(chosen) {
     });
 
     const exp = document.getElementById('quiz-explain');
-    exp.textContent = (correct ? '✅ Correct! ' : '❌ Wrong. ') + q.explain;
+    exp.textContent = (correct ? '✅ ' : '❌ ') + q.explain;
     exp.style.color = correct ? '#00ff41' : '#ff6666';
+    exp.style.borderLeftColor = correct ? '#00ff41' : '#ff4444';
     exp.style.display='block';
 
     document.getElementById('quiz-next-btn').style.display='block';
     document.getElementById('quiz-next-btn').textContent =
-        quizCurrent < quizQuestions.length-1 ? 'NEXT QUESTION →' : 'SEE RESULTS →';
+        quizCurrent < quizQuestions.length-1 ? 'NEXT →' : 'SEE RESULTS →';
 
     document.getElementById('quiz-progress-bar-fill').style.width = `${((quizCurrent+1)/quizQuestions.length)*100}%`;
 }
@@ -2394,7 +2406,9 @@ function nextQuestion() {
 
 function showQuizResults() {
     hide('quiz-screen');
-    show('quiz-results','flex');
+    const qr = document.getElementById('quiz-results');
+    qr.classList.remove('hidden');
+    qr.style.display = 'flex';
     const total = quizQuestions.length;
     const pct   = Math.round((quizScore/total)*100);
     const passed = quizScore >= 7;
@@ -2570,51 +2584,197 @@ function downloadCertificate() {
 <!-- ══════════════════════════════════════════════════════════════ -->
 <!--  QUIZ SCREEN                                                   -->
 <!-- ══════════════════════════════════════════════════════════════ -->
-<div id="quiz-screen" class="screen hidden" style="background:#03050a; z-index:8000; flex-direction:column; padding:0;">
-    <style>
-        @keyframes quizSlideIn { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
-        #quiz-screen::before { content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(0,200,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,0.025) 1px,transparent 1px); background-size:48px 48px; pointer-events:none; }
-        .qopt-btn { width:100%; text-align:left; background:rgba(0,200,255,0.03); border:1px solid rgba(0,200,255,0.15); color:#7aafbf; padding:14px 20px; font-family:'Space Mono',monospace; font-size:13px; line-height:1.5; cursor:pointer; transition:all 0.2s; margin-bottom:8px; display:block; }
-        .qopt-btn:hover:not(:disabled) { border-color:rgba(0,200,255,0.6); background:rgba(0,200,255,0.08); color:#fff; box-shadow:0 0 14px rgba(0,200,255,0.15); }
-        .qopt-btn.correct  { border-color:#00ff41 !important; background:rgba(0,255,65,0.1) !important; color:#00ff41 !important; box-shadow:0 0 16px rgba(0,255,65,0.25) !important; }
-        .qopt-btn.wrong    { border-color:#ff4444 !important; background:rgba(255,68,68,0.1) !important; color:#ff4444 !important; }
-        .qopt-btn:disabled { cursor:default; }
-        #quiz-next-btn { font-family:'Press Start 2P',cursive; font-size:10px; background:#00c8ff; color:#000; border:none; padding:12px 28px; cursor:pointer; margin-top:12px; letter-spacing:1px; transition:all 0.2s; }
-        #quiz-next-btn:hover { background:#fff; box-shadow:0 0 20px rgba(0,200,255,0.4); }
-        #quiz-explain { font-family:'Space Mono',monospace; font-size:12px; line-height:1.7; margin-top:12px; padding:12px 16px; border-left:3px solid; background:rgba(0,0,0,0.3); display:none; }
-    </style>
+<div id="quiz-screen" class="screen hidden" style="background:#030810; z-index:8000; flex-direction:column; padding:0;">
+<style>
+@keyframes quizSlideIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes scanline { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
+@keyframes optPulse { 0%,100%{box-shadow:0 0 6px rgba(0,200,255,0.1)} 50%{box-shadow:0 0 18px rgba(0,200,255,0.3)} }
 
-    <!-- Loading -->
-    <div id="quiz-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:20px;">
-        <div style="font-family:'Press Start 2P',cursive;font-size:11px;color:#00c8ff;letter-spacing:3px;">GENERATING QUIZ</div>
-        <div style="font-family:'Space Mono',monospace;font-size:11px;color:#2a4a5a;letter-spacing:1px;">Querying OpenGradient model...</div>
-        <div style="display:flex;gap:8px;margin-top:8px;">
-            <div style="width:8px;height:8px;border-radius:50%;background:#00c8ff;animation:blink 0.8s 0s step-end infinite;"></div>
-            <div style="width:8px;height:8px;border-radius:50%;background:#00c8ff;animation:blink 0.8s 0.27s step-end infinite;"></div>
-            <div style="width:8px;height:8px;border-radius:50%;background:#00c8ff;animation:blink 0.8s 0.54s step-end infinite;"></div>
+#quiz-screen::before {
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background-image:
+        linear-gradient(rgba(0,200,255,0.03) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(0,200,255,0.03) 1px,transparent 1px);
+    background-size:48px 48px;
+}
+#quiz-screen::after {
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.08) 3px,rgba(0,0,0,0.08) 4px);
+}
+
+/* ── TERMINAL WINDOW ── */
+.quiz-terminal {
+    position:relative; z-index:2;
+    width:92%; max-width:820px;
+    border:2px solid rgba(0,200,255,0.5);
+    background:rgba(2,8,20,0.97);
+    box-shadow:0 0 60px rgba(0,200,255,0.15), inset 0 0 40px rgba(0,200,255,0.03);
+}
+.quiz-terminal-bar {
+    display:flex; align-items:center; gap:10px;
+    background:rgba(0,200,255,0.07); border-bottom:1px solid rgba(0,200,255,0.2);
+    padding:10px 18px;
+}
+.qt-dot { width:9px; height:9px; border-radius:50%; }
+.quiz-terminal-title {
+    font-family:'Press Start 2P',cursive; font-size:8px;
+    color:rgba(0,200,255,0.7); letter-spacing:3px; margin-left:6px;
+}
+.quiz-terminal-body { padding:24px 28px; }
+
+/* ── PROGRESS ── */
+.quiz-prog-row {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:10px;
+}
+.quiz-prog-label { font-family:'Space Mono',monospace; font-size:10px; color:#1a4a5a; letter-spacing:2px; }
+.quiz-score-badge {
+    font-family:'Press Start 2P',cursive; font-size:8px;
+    color:#00c8ff; background:rgba(0,200,255,0.08);
+    border:1px solid rgba(0,200,255,0.25); padding:4px 12px;
+}
+.quiz-bar-wrap { height:3px; background:rgba(0,200,255,0.08); margin-bottom:22px; overflow:hidden; }
+.quiz-bar-fill { height:100%; background:#00c8ff; width:0%; transition:width 0.5s ease; box-shadow:0 0 8px #00c8ff; }
+
+/* ── QUESTION BOX ── */
+.quiz-q-box {
+    position:relative;
+    border:1px solid rgba(0,200,255,0.2);
+    background:rgba(0,200,255,0.02);
+    padding:18px 22px;
+    margin-bottom:22px;
+}
+.quiz-q-box::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg,transparent,rgba(0,200,255,0.6),transparent);
+}
+.quiz-q-num {
+    font-family:'Space Mono',monospace; font-size:9px;
+    color:rgba(0,200,255,0.4); letter-spacing:2px; margin-bottom:10px;
+}
+.quiz-q-text {
+    font-family:'Press Start 2P',cursive;
+    font-size:clamp(10px,1.4vw,13px);
+    color:#e0f4ff; line-height:1.9;
+}
+
+/* ── OPTIONS GRID — 2x2 ── */
+.quiz-opts-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:12px;
+    margin-bottom:16px;
+}
+.qopt-btn {
+    position:relative; text-align:left;
+    background:rgba(0,200,255,0.03);
+    border:1px solid rgba(0,200,255,0.18);
+    color:#7ab8cc; padding:16px 18px;
+    font-family:'Space Mono',monospace; font-size:12px; line-height:1.5;
+    cursor:pointer; transition:all 0.2s;
+    display:flex; align-items:flex-start; gap:12px;
+}
+.qopt-btn:hover:not(:disabled) {
+    border-color:rgba(0,200,255,0.7);
+    background:rgba(0,200,255,0.07);
+    color:#fff;
+    box-shadow:0 0 16px rgba(0,200,255,0.2);
+    transform:translateY(-1px);
+}
+.qopt-letter {
+    font-family:'Press Start 2P',cursive; font-size:9px;
+    color:rgba(0,200,255,0.5); min-width:18px; margin-top:2px;
+}
+.qopt-btn.correct {
+    border-color:#00ff41 !important; background:rgba(0,255,65,0.08) !important;
+    color:#00ff41 !important; box-shadow:0 0 20px rgba(0,255,65,0.25) !important;
+}
+.qopt-btn.correct .qopt-letter { color:#00ff41 !important; }
+.qopt-btn.wrong {
+    border-color:#ff4444 !important; background:rgba(255,68,68,0.08) !important;
+    color:#ff6666 !important;
+}
+.qopt-btn.wrong .qopt-letter { color:#ff4444 !important; }
+.qopt-btn:disabled { cursor:default; transform:none !important; }
+
+/* ── EXPLAIN + NEXT ── */
+.quiz-explain-box {
+    display:none; margin-bottom:14px;
+    border-left:3px solid rgba(0,200,255,0.4);
+    background:rgba(0,200,255,0.04);
+    padding:12px 16px;
+    font-family:'Space Mono',monospace; font-size:11px; line-height:1.7;
+}
+.quiz-next-btn {
+    font-family:'Press Start 2P',cursive; font-size:9px;
+    background:#00c8ff; color:#000; border:none;
+    padding:12px 28px; cursor:pointer; letter-spacing:1px;
+    transition:all 0.2s; display:none;
+}
+.quiz-next-btn:hover { background:#fff; box-shadow:0 0 20px rgba(0,200,255,0.5); }
+
+/* ── LOADING ── */
+.quiz-loading-wrap {
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:center; height:100%; gap:18px;
+}
+.ql-title { font-family:'Press Start 2P',cursive; font-size:11px; color:#00c8ff; letter-spacing:3px; }
+.ql-sub   { font-family:'Space Mono',monospace; font-size:11px; color:#1a3a4a; letter-spacing:1px; }
+.ql-terminal {
+    width:380px; border:1px solid rgba(0,200,255,0.3);
+    background:rgba(0,200,255,0.03); padding:16px 20px;
+    font-family:'Space Mono',monospace; font-size:11px;
+    color:#1a6a7a; line-height:1.9;
+}
+.ql-cursor { display:inline-block; width:8px; height:12px; background:#00c8ff; animation:blink 0.8s step-end infinite; vertical-align:middle; margin-left:4px; }
+</style>
+
+<!-- LOADING STATE -->
+<div id="quiz-loading" class="quiz-loading-wrap">
+    <div class="ql-title">// GENERATING QUIZ</div>
+    <div class="ql-terminal">
+        <div>> connecting to OG_LLM...</div>
+        <div>> model: <span style="color:#00c8ff">GROK_4_FAST [TEE]</span></div>
+        <div>> generating questions<span class="ql-cursor"></span></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+        <div style="width:7px;height:7px;border-radius:50%;background:#00c8ff;animation:blink 0.8s 0s step-end infinite;"></div>
+        <div style="width:7px;height:7px;border-radius:50%;background:#00c8ff;animation:blink 0.8s 0.27s step-end infinite;"></div>
+        <div style="width:7px;height:7px;border-radius:50%;background:#00c8ff;animation:blink 0.8s 0.54s step-end infinite;"></div>
+    </div>
+</div>
+
+<!-- MAIN QUIZ -->
+<div id="quiz-main" style="display:none;width:100%;height:100%;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;">
+    <div class="quiz-terminal" id="quiz-card">
+        <!-- Terminal bar -->
+        <div class="quiz-terminal-bar">
+            <div class="qt-dot" style="background:#ff5f56;"></div>
+            <div class="qt-dot" style="background:#ffbd2e;"></div>
+            <div class="qt-dot" style="background:#27c93f;"></div>
+            <div class="quiz-terminal-title">>> OG_PROTOCOL // KNOWLEDGE_CHECK</div>
+        </div>
+        <div class="quiz-terminal-body">
+            <!-- Progress -->
+            <div class="quiz-prog-row">
+                <div class="quiz-prog-label" id="quiz-progress-text">QUESTION 1 / 10</div>
+                <div class="quiz-score-badge" id="quiz-score-display">SCORE: 0/10</div>
+            </div>
+            <div class="quiz-bar-wrap">
+                <div class="quiz-bar-fill" id="quiz-progress-bar-fill"></div>
+            </div>
+            <!-- Question -->
+            <div class="quiz-q-box">
+                <div class="quiz-q-num" id="quiz-q-num">// QUERY_001</div>
+                <div class="quiz-q-text" id="quiz-question-text"></div>
+            </div>
+            <!-- Options 2x2 grid -->
+            <div class="quiz-opts-grid" id="quiz-options"></div>
+            <!-- Explain -->
+            <div class="quiz-explain-box" id="quiz-explain"></div>
+            <!-- Next -->
+            <button class="quiz-next-btn" id="quiz-next-btn" onclick="nextQuestion()">NEXT →</button>
         </div>
     </div>
-
-    <!-- Main quiz -->
-    <div id="quiz-main" style="display:none;width:100%;height:100%;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px 24px;">
-        <!-- Header -->
-        <div style="width:100%;max-width:760px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-            <div style="font-family:'Press Start 2P',cursive;font-size:8px;color:#00c8ff;letter-spacing:3px;">OG PROTOCOL QUIZ</div>
-            <div id="quiz-score-display" style="font-family:'Space Mono',monospace;font-size:11px;color:#2a5060;"></div>
-        </div>
-        <!-- Progress bar -->
-        <div style="width:100%;max-width:760px;height:3px;background:rgba(0,200,255,0.1);margin-bottom:32px;border-radius:2px;overflow:hidden;">
-            <div id="quiz-progress-bar-fill" style="height:100%;background:#00c8ff;width:0%;transition:width 0.5s ease;box-shadow:0 0 8px #00c8ff;"></div>
-        </div>
-        <!-- Question card -->
-        <div id="quiz-card" style="width:100%;max-width:760px;animation:quizSlideIn 0.4s ease both;">
-            <div style="font-family:'Space Mono',monospace;font-size:10px;color:#1a4a5a;letter-spacing:3px;margin-bottom:10px;" id="quiz-progress-text"></div>
-            <div id="quiz-question-text" style="font-family:'Press Start 2P',cursive;font-size:clamp(11px,1.6vw,15px);color:#fff;line-height:1.8;margin-bottom:28px;padding:20px 24px;border:1px solid rgba(0,200,255,0.2);background:rgba(0,200,255,0.03);border-left:3px solid rgba(0,200,255,0.5);"></div>
-            <div id="quiz-options"></div>
-            <div id="quiz-explain"></div>
-            <button id="quiz-next-btn" style="display:none;" onclick="nextQuestion()">NEXT QUESTION →</button>
-        </div>
-    </div>
+</div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
