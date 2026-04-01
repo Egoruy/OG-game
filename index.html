@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com blob: data: *; img-src 'self' data: blob: https: *; worker-src 'self' blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net blob:; connect-src 'self' https://api.anthropic.com blob:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https: *;">
     <title>OpenGradient — Interactive Experience</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
@@ -2293,60 +2293,16 @@ let quizCurrent   = 0;
 let quizScore     = 0;
 let quizAnswered  = false;
 
-const OG_CONTEXT = `
-OpenGradient is a decentralized AI infrastructure platform. Key concepts covered:
-1. TEE (Trusted Execution Environment): Hardware-isolated enclave where AI models run. Tamper-proof. No external access during execution. Used for verifiable inference.
-2. Walrus: Decentralized storage network where AI models live. Censorship-proof, no single point of failure. Models stored as blobs with on-chain CID hashes.
-3. OpenGradient Model Hub: Repository of community-built AI models (classifiers, recognizers, oracles). Discoverable and callable on-chain.
-4. MemSync: Multi-agent coordination protocol. Multiple AI bots share state on-chain. Bots sync memory via blockchain transactions. Each bot has a role (Coordinator, Validator, Executor, Sentinel).
-5. Twin Function: Wraps a model call in a TEE enclave, producing a cryptographic attestation (Golden Seal / Proof). The blockchain verifies the seal — trustless output verification.
-6. x402 micropayment protocol: Pay-per-inference model. No API keys, no subscriptions. Micro-transactions per model call.
-7. ZKML: Zero-Knowledge Machine Learning — proving model output is correct without revealing weights.
-8. VANILLA inference: Standard non-verified inference mode (cheaper, no proof).
-9. On-chain verifiability: Every inference result can be verified on-chain via attestation or ZK proof.
-10. Privacy by default: Models in TEE don't store user data between sessions. Users must pass their own state explicitly.
-`;
-
 async function startQuiz() {
     show('quiz-screen','flex');
     document.getElementById('quiz-loading').style.display='flex';
     document.getElementById('quiz-main').style.display='none';
 
     try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({
-                model:'claude-sonnet-4-20250514',
-                max_tokens:1000,
-                messages:[{
-                    role:'user',
-                    content:`You are generating a quiz about OpenGradient decentralized AI platform.
-Context about OpenGradient:
-${OG_CONTEXT}
-
-Generate exactly 10 multiple-choice quiz questions. Questions should be easy to medium difficulty — testing understanding of concepts, not memorization of numbers or obscure facts.
-
-Return ONLY a JSON array, no markdown, no explanation. Format:
-[
-  {
-    "q": "question text",
-    "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
-    "answer": 0,
-    "explain": "one sentence explanation of the correct answer"
-  }
-]
-
-"answer" is the 0-based index of the correct option. Make sure questions cover: TEE enclaves, Walrus storage, Model Hub, MemSync, Twin Function, x402 payments, verifiability, privacy.`
-                }]
-            })
-        });
+        const response = await fetch('/api/quiz');
         const data = await response.json();
-        const text = data.content.map(i=>i.text||'').join('');
-        const clean = text.replace(/```json|```/g,'').trim();
-        quizQuestions = JSON.parse(clean);
+        quizQuestions = data.questions;
     } catch(err) {
-        // Fallback static questions if API fails
         quizQuestions = getFallbackQuestions();
     }
 
