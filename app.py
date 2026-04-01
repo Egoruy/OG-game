@@ -69,17 +69,25 @@ Context:
 
 Generate exactly 10 multiple-choice quiz questions. Easy to medium difficulty.
 
+CRITICAL RULES:
+- The correct answer MUST be placed at DIFFERENT positions across questions.
+- Distribute correct answers evenly: some at index 0 (A), some at 1 (B), some at 2 (C), some at 3 (D).
+- Do NOT put the correct answer at the same index for more than 2 questions in a row.
+- Make wrong options plausible but clearly incorrect on reflection.
+
 Return ONLY a JSON array, no markdown, no explanation, no backticks. Format:
 [
   {{
     "q": "question text",
-    "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
-    "answer": 0,
-    "explain": "one sentence explanation"
+    "options": ["option A text", "option B text", "option C text", "option D text"],
+    "answer": 2,
+    "explain": "one sentence explanation of why the correct answer is right"
   }}
 ]
 
-"answer" is 0-based index of correct option. Cover: TEE, Walrus, Model Hub, MemSync, Twin Function, x402, ZKML, privacy."""
+"answer" is 0-based index of the correct option (0=A, 1=B, 2=C, 3=D).
+Make sure across all 10 questions, answers are spread: roughly 2-3 questions each for indices 0,1,2,3.
+Cover topics: TEE, Walrus, Model Hub, MemSync, Twin Function, x402, ZKML, privacy, VANILLA inference, on-chain verification."""
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────

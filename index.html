@@ -2011,11 +2011,11 @@ function startL4Game() {
             const tx = 420*sx, ty = 200*sy;
             const tcGlow = this.add.circle(tx, ty, 30*Math.min(sx,sy), 0xf5c542, 0.18).setDepth(3);
             this.tweens.add({targets:tcGlow,scaleX:1.7,scaleY:1.7,alpha:0,duration:1100,repeat:-1,ease:'Sine.easeOut'});
-            this.add.text(tx, ty, '💻', {fontSize:'20px'}).setOrigin(0.5).setDepth(4);
-            const twinLabel = this.add.text(tx, ty+26*sy, 'TWIN\nCONSOLE',
-                {fontFamily:'"Press Start 2P"',fontSize:'9px',color:'#f5c542',align:'center',lineSpacing:2}
+            this.add.text(tx, ty, '💻', {fontSize:'14px'}).setOrigin(0.5).setDepth(4);
+            const twinLabel = this.add.text(tx, ty+20*sy, '[ TERMINAL ]',
+                {fontFamily:'"Space Mono"',fontSize:'9px',color:'#f5c542',align:'center'}
             ).setOrigin(0.5).setDepth(4);
-            this.tweens.add({targets:twinLabel, alpha:0.3, duration:700, yoyo:true, repeat:-1, ease:'Sine.easeInOut'});
+            this.tweens.add({targets:twinLabel, alpha:0.2, duration:700, yoyo:true, repeat:-1, ease:'Sine.easeInOut'});
             const tz = this.add.rectangle(tx, ty, 100*sx, 80*sy, 0, 0);
             tz.setData('type', 'terminal'); this.interactives.add(tz);
 
@@ -2276,19 +2276,51 @@ const QUIZ_BRIDGE_LINES = [
     "This is your moment. Show me what you know.",
 ];
 
+// ════════════════════════════════════════════════════════════════
+//  PROFILE SCREEN
+// ════════════════════════════════════════════════════════════════
+let playerNick = '';
+let playerAvatarDataURL = null;
+
 function showQuizBridge() {
-    show('quiz-bridge','flex');
-    setTimeout(()=>{
-        document.getElementById('qb-portrait').classList.add('in');
-        document.getElementById('qb-box').classList.add('in');
-    },100);
-    const eng = makeDialogueEngine(QUIZ_BRIDGE_LINES,'qb-text','qb-dots','qb-hint',()=>{
-        eng.stop();
-        hide('quiz-bridge');
-        startQuiz();
-    });
-    eng.start('qb-area');
-    document.getElementById('qb-skip').addEventListener('click',(e)=>{ e.stopPropagation(); eng.stop(); hide('quiz-bridge'); startQuiz(); });
+    // After Joseph's dialogue — show profile screen
+    hide('quiz-bridge');
+    const ps = document.getElementById('profile-screen');
+    ps.classList.remove('hidden');
+    ps.style.display = 'flex';
+    document.getElementById('profile-nick').value = '';
+    document.getElementById('profile-start-btn').disabled = true;
+    // Reset avatar
+    document.getElementById('avatar-img').style.display = 'none';
+    document.getElementById('avatar-placeholder').style.display = 'block';
+    playerAvatarDataURL = null;
+}
+
+function checkProfileReady() {
+    const nick = document.getElementById('profile-nick').value.trim();
+    document.getElementById('profile-start-btn').disabled = nick.length < 2;
+}
+
+function handleAvatarUpload(e) {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        playerAvatarDataURL = ev.target.result;
+        const img = document.getElementById('avatar-img');
+        img.src = playerAvatarDataURL;
+        img.style.display = 'block';
+        document.getElementById('avatar-placeholder').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+}
+
+function startQuizFromProfile() {
+    playerNick = document.getElementById('profile-nick').value.trim() || 'ANON';
+    const ps = document.getElementById('profile-screen');
+    ps.classList.add('hidden');
+    ps.style.display = 'none';
+    startQuiz();
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -2436,124 +2468,251 @@ function downloadCertificate() {
     const W = 1200, H = 800;
     canvas.width = W; canvas.height = H;
 
-    // Background
-    ctx.fillStyle = '#050400';
-    ctx.fillRect(0,0,W,H);
-
-    // Grid overlay
-    ctx.strokeStyle = 'rgba(245,197,66,0.06)';
-    ctx.lineWidth = 1;
-    for(let x=0;x<W;x+=40){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-    for(let y=0;y<H;y+=40){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-
-    // Outer border
-    ctx.strokeStyle = 'rgba(245,197,66,0.7)';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(20,20,W-40,H-40);
-
-    // Inner border
-    ctx.strokeStyle = 'rgba(245,197,66,0.25)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(36,36,W-72,H-72);
-
-    // Corner ornaments
-    const corners = [[44,44],[W-44,44],[44,H-44],[W-44,H-44]];
-    corners.forEach(([cx,cy])=>{
-        ctx.strokeStyle='rgba(245,197,66,0.8)';
-        ctx.lineWidth=2;
-        const s=22;
-        const dx = cx > W/2 ? -1 : 1;
-        const dy = cy > H/2 ? -1 : 1;
-        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+dx*s,cy); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx,cy+dy*s); ctx.stroke();
-    });
-
-    // Header badge
-    ctx.font = '600 13px "Courier New"';
-    ctx.fillStyle = 'rgba(245,197,66,0.5)';
-    ctx.letterSpacing = '8px';
-    ctx.textAlign='center';
-    ctx.fillText('✦  OPENGRADIENT PROTOCOL  ✦', W/2, 120);
-
-    // Divider line
-    const grad = ctx.createLinearGradient(100,0,W-100,0);
-    grad.addColorStop(0,'transparent'); grad.addColorStop(0.5,'rgba(245,197,66,0.7)'); grad.addColorStop(1,'transparent');
-    ctx.strokeStyle=grad; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(100,140); ctx.lineTo(W-100,140); ctx.stroke();
-
-    // Main title
-    ctx.font = 'bold 58px "Courier New"';
-    ctx.fillStyle = '#f5c542';
-    ctx.shadowColor='rgba(245,197,66,0.4)'; ctx.shadowBlur=30;
-    ctx.fillText('CERTIFICATE', W/2, 230);
-    ctx.shadowBlur=0;
-
-    ctx.font = '28px "Courier New"';
-    ctx.fillStyle = 'rgba(245,197,66,0.6)';
-    ctx.fillText('OF COMPLETION', W/2, 278);
-
-    // Divider
-    ctx.strokeStyle=grad; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(200,308); ctx.lineTo(W-200,308); ctx.stroke();
-
-    // Body text
-    ctx.font = '18px "Courier New"';
-    ctx.fillStyle = '#9a8a50';
-    ctx.fillText('This certifies that the bearer has successfully completed', W/2, 360);
-
-    ctx.font = 'bold 32px "Courier New"';
-    ctx.fillStyle = '#fff';
-    ctx.shadowColor='rgba(255,255,255,0.15)'; ctx.shadowBlur=12;
-    ctx.fillText('OPENGRADIENT INTERACTIVE COURSE', W/2, 415);
-    ctx.shadowBlur=0;
-
-    // Modules
-    ctx.font = '14px "Courier New"';
-    ctx.fillStyle = 'rgba(245,197,66,0.55)';
-    const modules = ['MODULE I: TEE Enclaves & Identity', 'MODULE II: MemSync Multi-Agent Coordination', 'MODULE III: Model Hub & Walrus Storage', 'MODULE IV: Twin Function & On-Chain Verification'];
-    modules.forEach((m,i)=>{ ctx.fillText(m, W/2, 468+i*28); });
-
-    // Score badge
     const total = quizQuestions.length;
     const pct   = Math.round((quizScore/total)*100);
-    ctx.beginPath();
-    ctx.arc(W/2, 648, 52, 0, Math.PI*2);
-    ctx.fillStyle='rgba(245,197,66,0.08)';
-    ctx.fill();
-    ctx.strokeStyle='rgba(245,197,66,0.7)'; ctx.lineWidth=2;
-    ctx.stroke();
-
-    ctx.font='bold 28px "Courier New"';
-    ctx.fillStyle='#f5c542';
-    ctx.shadowColor='rgba(245,197,66,0.5)'; ctx.shadowBlur=16;
-    ctx.fillText(`${pct}%`, W/2, 656);
-    ctx.shadowBlur=0;
-    ctx.font='10px "Courier New"';
-    ctx.fillStyle='rgba(245,197,66,0.5)';
-    ctx.fillText('FINAL SCORE', W/2, 674);
-
-    // Bottom
-    ctx.strokeStyle=grad; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(100,710); ctx.lineTo(W-100,710); ctx.stroke();
-
-    const now = new Date();
+    const now   = new Date();
     const dateStr = now.toISOString().split('T')[0];
-    ctx.font='12px "Courier New"';
-    ctx.fillStyle='rgba(245,197,66,0.3)';
-    ctx.fillText(`Issued: ${dateStr}  //  opengradient.ai  //  Verified On-Chain`, W/2, 748);
+    const name  = (playerNick || 'ANON').toUpperCase();
 
-    // Download
-    const link = document.createElement('a');
-    link.download = 'OpenGradient_Certificate.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    function drawAll(avatarImg) {
+        // Background
+        ctx.fillStyle = '#02050f';
+        ctx.fillRect(0,0,W,H);
+
+        // Grid
+        ctx.strokeStyle = 'rgba(0,200,255,0.04)';
+        ctx.lineWidth = 1;
+        for(let x=0;x<W;x+=40){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+        for(let y=0;y<H;y+=40){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+        // Scanlines
+        for(let y=0;y<H;y+=4){
+            ctx.fillStyle='rgba(0,0,0,0.08)';
+            ctx.fillRect(0,y+2,W,2);
+        }
+
+        // Outer glow border
+        ctx.shadowColor='rgba(0,200,255,0.6)'; ctx.shadowBlur=30;
+        ctx.strokeStyle='rgba(0,200,255,0.8)'; ctx.lineWidth=2;
+        ctx.strokeRect(22,22,W-44,H-44);
+        ctx.shadowBlur=0;
+
+        // Inner border
+        ctx.strokeStyle='rgba(0,200,255,0.2)'; ctx.lineWidth=1;
+        ctx.strokeRect(38,38,W-76,H-76);
+
+        // Corner brackets
+        const corners=[[46,46],[W-46,46],[46,H-46],[W-46,H-46]];
+        corners.forEach(([cx,cy])=>{
+            ctx.strokeStyle='rgba(0,200,255,0.9)'; ctx.lineWidth=2;
+            const s=28, dx=cx>W/2?-1:1, dy=cy>H/2?-1:1;
+            ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+dx*s,cy); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx,cy+dy*s); ctx.stroke();
+        });
+
+        // Header
+        ctx.textAlign='center';
+        ctx.font='11px "Courier New"';
+        ctx.fillStyle='rgba(0,200,255,0.4)';
+        ctx.letterSpacing='8px';
+        ctx.fillText('✦  OPENGRADIENT PROTOCOL  ✦', W/2, 105);
+        ctx.letterSpacing='0px';
+
+        const grad=ctx.createLinearGradient(100,0,W-100,0);
+        grad.addColorStop(0,'transparent'); grad.addColorStop(0.5,'rgba(0,200,255,0.5)'); grad.addColorStop(1,'transparent');
+        ctx.strokeStyle=grad; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(100,124); ctx.lineTo(W-100,124); ctx.stroke();
+
+        // Avatar (left side)
+        const avatarX=160, avatarY=250, avatarSize=140;
+        ctx.strokeStyle='rgba(0,200,255,0.6)'; ctx.lineWidth=2;
+        ctx.strokeRect(avatarX-avatarSize/2, avatarY-avatarSize/2, avatarSize, avatarSize);
+        if(avatarImg){
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(avatarX-avatarSize/2, avatarY-avatarSize/2, avatarSize, avatarSize);
+            ctx.clip();
+            ctx.drawImage(avatarImg, avatarX-avatarSize/2, avatarY-avatarSize/2, avatarSize, avatarSize);
+            ctx.restore();
+        } else {
+            ctx.font='64px serif';
+            ctx.textAlign='center';
+            ctx.fillText('👤', avatarX, avatarY+22);
+        }
+        // Avatar corner brackets
+        [[avatarX-avatarSize/2-3,avatarY-avatarSize/2-3],[avatarX+avatarSize/2+3,avatarY-avatarSize/2-3],
+         [avatarX-avatarSize/2-3,avatarY+avatarSize/2+3],[avatarX+avatarSize/2+3,avatarY+avatarSize/2+3]].forEach(([cx,cy])=>{
+            const dx=cx>avatarX?-1:1, dy=cy>avatarY?-1:1;
+            ctx.strokeStyle='#00c8ff'; ctx.lineWidth=2;
+            ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+dx*14,cy); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx,cy+dy*14); ctx.stroke();
+        });
+
+        // Main title (right of avatar)
+        ctx.textAlign='left';
+        ctx.font='bold 52px "Courier New"';
+        ctx.fillStyle='#00c8ff';
+        ctx.shadowColor='rgba(0,200,255,0.5)'; ctx.shadowBlur=20;
+        ctx.fillText('CERTIFICATE', 320, 200);
+        ctx.shadowBlur=0;
+
+        ctx.font='22px "Courier New"';
+        ctx.fillStyle='rgba(0,200,255,0.5)';
+        ctx.fillText('OF COMPLETION', 322, 238);
+
+        ctx.strokeStyle=grad; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(320,258); ctx.lineTo(W-80,258); ctx.stroke();
+
+        // Name
+        ctx.font='14px "Courier New"';
+        ctx.fillStyle='rgba(0,200,255,0.35)';
+        ctx.fillText('// ISSUED TO', 320, 295);
+
+        ctx.font='bold 38px "Courier New"';
+        ctx.fillStyle='#ffffff';
+        ctx.shadowColor='rgba(0,200,255,0.3)'; ctx.shadowBlur=10;
+        ctx.fillText(name, 320, 342);
+        ctx.shadowBlur=0;
+
+        // Course name
+        ctx.font='bold 18px "Courier New"';
+        ctx.fillStyle='rgba(255,255,255,0.7)';
+        ctx.fillText('OPENGRADIENT INTERACTIVE COURSE', 320, 385);
+
+        // Modules
+        ctx.font='12px "Courier New"';
+        ctx.fillStyle='rgba(0,200,255,0.45)';
+        const mods=['▸ MODULE I: TEE Enclaves & Identity','▸ MODULE II: MemSync Multi-Agent Coordination','▸ MODULE III: Model Hub & Walrus Storage','▸ MODULE IV: Twin Function & On-Chain Verification'];
+        mods.forEach((m,i)=> ctx.fillText(m, 320, 418+i*24));
+
+        // Bottom divider
+        ctx.strokeStyle=grad; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(80,560); ctx.lineTo(W-80,560); ctx.stroke();
+
+        // Score badge (bottom center-left)
+        ctx.beginPath(); ctx.arc(200,650,55,0,Math.PI*2);
+        ctx.fillStyle='rgba(0,200,255,0.05)'; ctx.fill();
+        ctx.strokeStyle='rgba(0,200,255,0.5)'; ctx.lineWidth=1.5; ctx.stroke();
+        ctx.font='bold 30px "Courier New"'; ctx.fillStyle='#00c8ff';
+        ctx.textAlign='center';
+        ctx.shadowColor='rgba(0,200,255,0.6)'; ctx.shadowBlur=14;
+        ctx.fillText(`${pct}%`, 200, 660);
+        ctx.shadowBlur=0;
+        ctx.font='9px "Courier New"'; ctx.fillStyle='rgba(0,200,255,0.4)';
+        ctx.fillText('FINAL SCORE', 200, 678);
+
+        // Date + URL bottom
+        ctx.font='11px "Courier New"';
+        ctx.fillStyle='rgba(0,200,255,0.2)';
+        ctx.fillText(`Issued: ${dateStr}  //  opengradient.ai  //  Verified On-Chain`, W/2, 748);
+
+        // Download
+        const link=document.createElement('a');
+        link.download=`OG_Certificate_${name}.png`;
+        link.href=canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    if(playerAvatarDataURL){
+        const img=new Image();
+        img.onload=()=>drawAll(img);
+        img.src=playerAvatarDataURL;
+    } else {
+        drawAll(null);
+    }
 }
 
 </script>
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!--  QUIZ BRIDGE — JOSEPHWEB3                                     -->
+<!--  PROFILE SCREEN (before quiz)                                 -->
 <!-- ══════════════════════════════════════════════════════════════ -->
-<div id="quiz-bridge" class="dlg-screen" style="background:#060a0e; z-index:7000; display:none;">
+<div id="profile-screen" class="screen hidden" style="background:#030810; z-index:7500; flex-direction:column;">
+<style>
+#profile-screen::before {
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background-image: linear-gradient(rgba(0,200,255,0.03) 1px,transparent 1px), linear-gradient(90deg,rgba(0,200,255,0.03) 1px,transparent 1px);
+    background-size:48px 48px;
+}
+#profile-screen::after {
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.08) 3px,rgba(0,0,0,0.08) 4px);
+}
+.profile-terminal {
+    position:relative; z-index:2;
+    width:92%; max-width:560px;
+    border:2px solid rgba(0,200,255,0.5);
+    background:rgba(2,8,20,0.97);
+    box-shadow:0 0 60px rgba(0,200,255,0.15), inset 0 0 40px rgba(0,200,255,0.03);
+}
+.profile-bar {
+    display:flex; align-items:center; gap:10px;
+    background:rgba(0,200,255,0.07); border-bottom:1px solid rgba(0,200,255,0.2);
+    padding:10px 18px;
+}
+.profile-body { padding:28px 32px; }
+.profile-label {
+    font-family:'Space Mono',monospace; font-size:9px;
+    color:rgba(0,200,255,0.5); letter-spacing:2px; margin-bottom:8px; display:block;
+}
+.profile-input {
+    width:100%; background:rgba(0,200,255,0.04);
+    border:1px solid rgba(0,200,255,0.3); color:#00c8ff;
+    padding:12px 16px; font-family:'"Press Start 2P",cursive'; font-size:13px;
+    outline:none; margin-bottom:24px; font-family:'Space Mono',monospace;
+    transition:border-color 0.2s;
+}
+.profile-input:focus { border-color:#00c8ff; box-shadow:0 0 12px rgba(0,200,255,0.2); }
+.profile-avatar-label { font-family:'Space Mono',monospace; font-size:9px; color:rgba(0,200,255,0.5); letter-spacing:2px; margin-bottom:12px; display:block; }
+.profile-avatar-row { display:flex; align-items:center; gap:16px; margin-bottom:28px; }
+.profile-avatar-preview {
+    width:72px; height:72px; border:2px solid rgba(0,200,255,0.4);
+    background:rgba(0,200,255,0.04); display:flex; align-items:center; justify-content:center;
+    font-size:28px; color:rgba(0,200,255,0.3); overflow:hidden; flex-shrink:0;
+    cursor:pointer; transition:border-color 0.2s;
+    position:relative;
+}
+.profile-avatar-preview:hover { border-color:#00c8ff; }
+.profile-avatar-preview img { width:100%; height:100%; object-fit:cover; display:none; }
+.profile-avatar-hint { font-family:'Space Mono',monospace; font-size:10px; color:#1a4a5a; line-height:1.7; }
+.profile-start-btn {
+    width:100%; font-family:'Press Start 2P',cursive; font-size:10px;
+    background:#00c8ff; color:#000; border:none; padding:14px;
+    cursor:pointer; letter-spacing:2px; transition:all 0.2s;
+}
+.profile-start-btn:hover { background:#fff; box-shadow:0 0 20px rgba(0,200,255,0.5); }
+.profile-start-btn:disabled { background:#1a3a4a; color:#2a5a6a; cursor:not-allowed; box-shadow:none; }
+#avatar-file-input { display:none; }
+</style>
+<div class="profile-terminal">
+    <div class="profile-bar">
+        <div class="qt-dot" style="background:#ff5f56;"></div>
+        <div class="qt-dot" style="background:#ffbd2e;"></div>
+        <div class="qt-dot" style="background:#27c93f;"></div>
+        <div class="quiz-terminal-title">>> IDENTITY_CHECK // BEFORE_QUIZ</div>
+    </div>
+    <div class="profile-body">
+        <span class="profile-label">// ENTER YOUR CALLSIGN</span>
+        <input type="text" class="profile-input" id="profile-nick" placeholder="your_name_here" maxlength="24" autocomplete="off" spellcheck="false" oninput="checkProfileReady()">
+
+        <span class="profile-avatar-label">// UPLOAD PROFILE IMAGE (optional)</span>
+        <div class="profile-avatar-row">
+            <div class="profile-avatar-preview" id="avatar-preview" onclick="document.getElementById('avatar-file-input').click()">
+                <img id="avatar-img" src="" alt="">
+                <span id="avatar-placeholder">👤</span>
+            </div>
+            <div class="profile-avatar-hint">
+                Click the square to upload<br>your photo or any image.<br>
+                <span style="color:rgba(0,200,255,0.3);">It will appear on your certificate.</span>
+            </div>
+        </div>
+        <input type="file" id="avatar-file-input" accept="image/*" onchange="handleAvatarUpload(event)">
+
+        <button class="profile-start-btn" id="profile-start-btn" onclick="startQuizFromProfile()" disabled>
+            ▶ START QUIZ
+        </button>
+    </div>
+</div>
+</div>
     <div class="dlg-bg-grid" style="background-image:linear-gradient(rgba(0,200,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,0.03) 1px,transparent 1px);"></div>
     <div class="dlg-bg-scan"></div>
     <div id="qb-fade" style="position:fixed;inset:0;background:#000;z-index:100;opacity:0;pointer-events:none;transition:opacity 0.8s;"></div>
