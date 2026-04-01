@@ -62,32 +62,36 @@ OpenGradient is a decentralized AI infrastructure platform. Key concepts:
 10. Privacy by default: Models in TEE don't store user data between sessions.
 """
 
-QUIZ_SYSTEM_PROMPT = f"""You are generating a quiz about OpenGradient decentralized AI platform.
+QUIZ_SYSTEM_PROMPT = f"""You are generating a quiz about OpenGradient decentralized AI platform for players who just completed an interactive game teaching these concepts.
+
+The game had 4 levels:
+- Level 1: Player talked to an AI that had no memory. They had to say "I am [name], remember me" to unlock a door. Concept: Privacy by default — TEE models don't store your data between sessions.
+- Level 2: Player commanded two bots (Bot A and Bot B) by typing "press button". Bot A wrote its status to MemSync network, Bot B read it automatically and reacted. Concept: Multi-agent coordination via shared on-chain memory.
+- Level 3: Player found a "Wall of Distortion" blocking the path. They opened the Model Hub terminal and chose the correct model (Pattern_Recognizer_v4) to decode the wall. Wrong choices were Data_Defragmenter and Crypto_Oracle. Concept: OpenGradient Model Hub — decentralized model repository on Walrus storage.
+- Level 4: Player found a Crypto-Gate that only opened after initializing a Twin Function. The sequence: connect cable → seal TEE enclave → golden seal proof → gate opens. Concept: Twin Function wraps AI in TEE, produces cryptographic attestation.
 
 Context:
 {OG_CONTEXT}
 
-Generate exactly 10 multiple-choice quiz questions. Easy to medium difficulty.
+Generate exactly 10 multiple-choice quiz questions. EASY difficulty — players just played the game, questions should reference what they experienced.
 
-CRITICAL RULES:
-- The correct answer MUST be placed at DIFFERENT positions across questions.
-- Distribute correct answers evenly: some at index 0 (A), some at 1 (B), some at 2 (C), some at 3 (D).
-- Do NOT put the correct answer at the same index for more than 2 questions in a row.
-- Make wrong options plausible but clearly incorrect on reflection.
+RULES:
+- Questions should feel familiar ("In Level 1...", "When you commanded Bot A...", "Which model did you use to...", "What happened when you initialized the Twin...")
+- Simple, direct questions — no tricks
+- Wrong answers should be obviously wrong to someone who played
+- Distribute correct answers: mix of A, B, C, D positions — NO more than 2 same index in a row
 
-Return ONLY a JSON array, no markdown, no explanation, no backticks. Format:
+Return ONLY a JSON array, no markdown, no backticks:
 [
   {{
     "q": "question text",
-    "options": ["option A text", "option B text", "option C text", "option D text"],
-    "answer": 2,
-    "explain": "one sentence explanation of why the correct answer is right"
+    "options": ["option A", "option B", "option C", "option D"],
+    "answer": 0,
+    "explain": "short explanation referencing the game"
   }}
 ]
 
-"answer" is 0-based index of the correct option (0=A, 1=B, 2=C, 3=D).
-Make sure across all 10 questions, answers are spread: roughly 2-3 questions each for indices 0,1,2,3.
-Cover topics: TEE, Walrus, Model Hub, MemSync, Twin Function, x402, ZKML, privacy, VANILLA inference, on-chain verification."""
+"answer" = 0-based index (0=A, 1=B, 2=C, 3=D). Spread answers across A/B/C/D evenly."""
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -149,16 +153,16 @@ def generate_quiz():
 
 def get_fallback_questions():
     return [
-        {"q":"What does TEE stand for in OpenGradient?","options":["A) Token Execution Engine","B) Trusted Execution Environment","C) Transparent Encryption Engine","D) Timed Execution Event"],"answer":1,"explain":"TEE = Trusted Execution Environment — hardware-isolated area for secure computation."},
-        {"q":"Where are AI models stored in OpenGradient?","options":["A) AWS S3","B) IPFS only","C) Walrus decentralized storage","D) A central server"],"answer":2,"explain":"Models live on Walrus, a censorship-proof decentralized storage network."},
-        {"q":"What is a Twin Function?","options":["A) Running two models simultaneously","B) A model wrapped in TEE with cryptographic proof output","C) A function that duplicates data on-chain","D) A backup inference system"],"answer":1,"explain":"Twin Function seals model execution inside a TEE and attaches attestation proof to the output."},
-        {"q":"What does the Golden Seal represent?","options":["A) A premium badge","B) Cryptographic attestation proving output came from a trusted TEE","C) A Walrus storage confirmation","D) An x402 payment receipt"],"answer":1,"explain":"The Golden Seal is a cryptographic attestation — proof the model ran inside a verified TEE enclave."},
-        {"q":"What is MemSync used for?","options":["A) Storing model weights","B) Synchronising memory between multiple AI agents on-chain","C) Encrypting user data","D) Paying for inference"],"answer":1,"explain":"MemSync lets multiple AI bots coordinate by sharing state via blockchain transactions."},
-        {"q":"What is the x402 protocol?","options":["A) A ZK proof standard","B) A consensus algorithm","C) A pay-per-inference micropayment protocol","D) A model compression format"],"answer":2,"explain":"x402 enables micro-transactions per model call — no API keys or subscriptions needed."},
-        {"q":"What is ZKML?","options":["A) A model training framework","B) Zero-Knowledge ML — proving inference correctness without revealing weights","C) A token standard","D) A decentralized marketplace"],"answer":1,"explain":"ZKML uses zero-knowledge proofs to verify model output without exposing the model weights."},
-        {"q":"Why does a TEE model not remember you between sessions?","options":["A) Too expensive","B) Privacy by design — models don't persist user data","C) Blockchain deletes memory","D) Walrus doesn't support persistent data"],"answer":1,"explain":"TEE enclaves are stateless by design — users control their own state and pass it explicitly."},
-        {"q":"What makes Walrus storage censorship-proof?","options":["A) Government encryption","B) Single hardened server","C) Distributed across decentralized network with no single point of failure","D) Only verified developers can delete"],"answer":2,"explain":"Walrus distributes model blobs across a decentralized network — no entity can remove them."},
-        {"q":"What is VANILLA inference mode?","options":["A) A flavoured model variant","B) Standard inference without cryptographic proof — cheaper but unverified","C) Inference with ZKML proof","D) TEE-only execution"],"answer":1,"explain":"VANILLA mode is standard inference without attestation — faster and cheaper, but not verifiable."},
+        {"q":"In Level 1, why didn't the AI remember you when you first approached it?","options":["It was broken","TEE models don't store user data between sessions by default","It needed a password","The blockchain was offline"],"answer":1,"explain":"TEE enclaves are stateless by design — privacy by default means no tracking between sessions."},
+        {"q":"What command did you use to activate the bots in Level 2?","options":["activate bot","start sequence","press button","run task"],"answer":2,"explain":"Typing 'press button' told each bot to execute its task and write its status to MemSync."},
+        {"q":"What is MemSync, which the bots used in Level 2?","options":["A chat system between bots","Shared on-chain memory that lets AI agents coordinate","A payment protocol","A model storage system"],"answer":1,"explain":"MemSync is shared on-chain memory — Bot A wrote its status, Bot B read it automatically."},
+        {"q":"In Level 3, which model correctly decoded the Wall of Distortion?","options":["Data_Defragmenter","Crypto_Oracle","Pattern_Recognizer_v4","MemSync_Decoder"],"answer":2,"explain":"Pattern_Recognizer_v4 extracts hidden structure from high-entropy noise — perfect for the distortion wall."},
+        {"q":"Where are models stored in the OpenGradient Model Hub?","options":["AWS S3","A central OpenGradient server","Walrus decentralized storage","IPFS only"],"answer":2,"explain":"Models live on Walrus — a decentralized, censorship-proof storage network. No single point of failure."},
+        {"q":"In Level 4, what was the first step when initializing the Twin Function?","options":["Open the golden seal","Connect digital cable from Gate to model","Press the blockchain button","Upload the model to Walrus"],"answer":1,"explain":"The first step was establishing the cable connection between the Crypto-Gate and the AI model node."},
+        {"q":"What is a TEE enclave, which you sealed in Level 4?","options":["A type of blockchain wallet","Hardware-isolated environment where AI runs tamper-proof","A decentralized storage bucket","A payment channel"],"answer":1,"explain":"TEE = Trusted Execution Environment — hardware-level isolation, no admin or hacker can access it during execution."},
+        {"q":"What did the Golden Seal represent when it appeared in Level 4?","options":["A high score badge","A payment confirmation","Cryptographic proof the AI ran inside a verified TEE","Access to the Model Hub"],"answer":2,"explain":"The Golden Seal is a cryptographic attestation — proof the output came from a trusted, untampered TEE enclave."},
+        {"q":"In Level 1, what exact phrase unlocked the door?","options":["I am [name], remember me","open sesame","unlock door","grant access [name]"],"answer":0,"explain":"You had to say 'I am [name], remember me' — explicitly passing your identity to the stateless AI."},
+        {"q":"Why did the Crypto-Gate in Level 4 refuse plain AI output?","options":["It needed a payment first","It only accepts output stamped with a TEE attestation proof","It was broken","The model was wrong"],"answer":1,"explain":"The gate verifies the blockchain attestation signature — only sealed TEE output is trusted, not plain inference."},
     ]
 
 
