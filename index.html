@@ -790,6 +790,8 @@ function startL1Dialogue() {
 function startL1Game() {
     currentLevel = 1;
     show('game-container', 'block');
+    hide('l1-dialogue'); hide('l2-dialogue'); hide('l3-dialogue'); hide('l4-dialogue');
+    hide('l1-ending'); hide('l2-ending'); hide('l3-ending'); hide('l4-ending');
     hide('terminal-overlay'); hide('bot-terminal');
     document.getElementById('memsync-hud').style.display = 'none';
 
@@ -1040,6 +1042,8 @@ function startL2Game() {
     currentLevel = 2;
     window.memSync = { botA:false, botB:false };
     show('game-container','block');
+    hide('l1-dialogue'); hide('l2-dialogue'); hide('l3-dialogue'); hide('l4-dialogue');
+    hide('l1-ending'); hide('l2-ending'); hide('l3-ending'); hide('l4-ending');
     hide('terminal-overlay'); hide('bot-terminal');
     document.getElementById('memsync-hud').style.display='block';
     updateHUD();
@@ -1352,6 +1356,8 @@ function startL3Dialogue() {
 function startL3Game() {
     currentLevel = 3;
     show('game-container','block');
+    hide('l1-dialogue'); hide('l2-dialogue'); hide('l3-dialogue'); hide('l4-dialogue');
+    hide('l1-ending'); hide('l2-ending'); hide('l3-ending'); hide('l4-ending');
     hide('terminal-overlay'); hide('bot-terminal'); hide('chip-terminal');
     document.getElementById('memsync-hud').style.display='none';
 
@@ -1903,6 +1909,8 @@ function startL4Dialogue() {
 function startL4Game() {
     currentLevel = 4;
     show('game-container', 'block');
+    hide('l1-dialogue'); hide('l2-dialogue'); hide('l3-dialogue'); hide('l4-dialogue');
+    hide('l1-ending'); hide('l2-ending'); hide('l3-ending'); hide('l4-ending');
     hide('twin-terminal');
 
     const hintSpan = document.getElementById('hint-text');
