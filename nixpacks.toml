@@ -1,0 +1,5 @@
+[phases.setup]
+    nixpacksArchive = "latest"
+
+[start]
+    cmd = "npx serve -p $PORT --no-clipboard -L -s ."
