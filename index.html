@@ -661,7 +661,14 @@ let currentLevel = 1;
 let phaserGame   = null;
 window.memSync   = { botA: false, botB: false };
 
-function hide(id)  { const el=document.getElementById(id); if(el){ el.style.display='none'; el.style.pointerEvents='none'; } }
+function hide(id) {
+    const el = document.getElementById(id);
+    if(el) {
+        el.style.display = 'none';
+        el.style.pointerEvents = 'none';
+        el.querySelectorAll('.dlg-box-wrap, .dlg-portrait-wrap').forEach(e => e.classList.remove('in'));
+    }
+}
 function show(id, displayType='flex') { const el=document.getElementById(id); if(el){ el.style.display=displayType; el.style.pointerEvents='all'; } }
 
 // ════════════════════════════════════════════════════════════════
