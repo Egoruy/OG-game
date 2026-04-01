@@ -663,13 +663,22 @@ window.memSync   = { botA: false, botB: false };
 
 function hide(id) {
     const el = document.getElementById(id);
-    if(el) {
-        el.style.display = 'none';
-        el.style.pointerEvents = 'none';
-        el.querySelectorAll('.dlg-box-wrap, .dlg-portrait-wrap').forEach(e => e.classList.remove('in'));
-    }
+    if(!el) return;
+    el.style.display = 'none';
+    el.style.pointerEvents = 'none';
+    // Reset dialogue elements so they slide back down
+    el.querySelectorAll('.dlg-box-wrap').forEach(e => { e.classList.remove('in'); e.style.display='none'; });
+    el.querySelectorAll('.dlg-portrait-wrap').forEach(e => { e.classList.remove('in'); e.style.display='none'; });
 }
-function show(id, displayType='flex') { const el=document.getElementById(id); if(el){ el.style.display=displayType; el.style.pointerEvents='all'; } }
+function show(id, displayType='flex') {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.style.display = displayType;
+    el.style.pointerEvents = 'all';
+    // Re-show dialogue elements
+    el.querySelectorAll('.dlg-box-wrap').forEach(e => e.style.display='');
+    el.querySelectorAll('.dlg-portrait-wrap').forEach(e => e.style.display='');
+}
 
 // ════════════════════════════════════════════════════════════════
 //  DIALOGUE ENGINE (generic, works for both levels)
@@ -1882,9 +1891,7 @@ function startL4Dialogue() {
     }, 100);
     const eng = makeDialogueEngine(L4_DLG_LINES, 'dlg4-text', 'dlg4-dots', 'dlg4-hint', ()=>{
         eng.stop();
-        const fade = document.getElementById('dlg4-fade');
-        fade.style.opacity = '1'; fade.style.pointerEvents = 'all';
-        setTimeout(()=>{ hide('l4-dialogue'); fade.style.opacity='0'; fade.style.pointerEvents='none'; startL4Game(); }, 900);
+        hide('l4-dialogue'); startL4Game();
     });
     eng.start('dlg4-area');
     document.getElementById('dlg4-skip').addEventListener('click', (e)=>{ e.stopPropagation(); eng.stop(); hide('l4-dialogue'); startL4Game(); });
