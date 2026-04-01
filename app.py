@@ -95,6 +95,10 @@ Cover topics: TEE, Walrus, Model Hub, MemSync, Twin Function, x402, ZKML, privac
 def index():
     return send_from_directory('.', 'index.html')
 
+@app.route('/models/<path:filename>')
+def model_files(filename):
+    return send_from_directory('models', filename)
+
 @app.route('/<path:filename>')
 def static_files(filename):
     return send_from_directory('.', filename)
