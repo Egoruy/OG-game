@@ -42,7 +42,7 @@ log.info("Initializing OpenGradient LLM client...")
 llm = og.LLM(private_key=os.environ.get('PRIVATE_KEY'))
 
 try:
-    approval = llm.ensure_opg_approval(opg_amount=4.0)
+    approval = llm.ensure_opg_approval(min_allowance=4.0)
     log.info(f"OPG allowance: {approval.allowance_after}")
 except Exception as e:
     log.warning(f"Could not ensure OPG approval: {e}")
